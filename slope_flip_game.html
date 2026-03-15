@@ -1,0 +1,1072 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Slope Flip Quest 🍄</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323:wght@400&display=swap');
+
+:root {
+  --sky: #5c94fc;
+  --ground: #8b4513;
+  --grass: #00a800;
+  --mario-red: #e52521;
+  --coin: #fbd000;
+  --brick: #c84b0e;
+  --white: #fcfcfc;
+  --dark: #1a1a2e;
+  --green: #00a800;
+  --pipe: #00832c;
+  --star: #fbd000;
+  --cloud: #fcfcfc;
+  --shadow: #0000008a;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Press Start 2P', monospace;
+  background: var(--sky);
+  color: var(--dark);
+  min-height: 100vh;
+  overflow-x: hidden;
+  image-rendering: pixelated;
+}
+
+/* ── PIXEL BG ── */
+.pixel-bg {
+  position: fixed; inset: 0; z-index: 0;
+  background:
+    radial-gradient(ellipse 80px 40px at 15% 20%, white 0%, transparent 100%),
+    radial-gradient(ellipse 60px 30px at 30% 18%, white 0%, transparent 100%),
+    radial-gradient(ellipse 100px 50px at 60% 12%, white 0%, transparent 100%),
+    radial-gradient(ellipse 70px 35px at 80% 22%, white 0%, transparent 100%);
+  background-color: var(--sky);
+  animation: cloudDrift 20s linear infinite;
+}
+
+@keyframes cloudDrift {
+  from { background-position: 0 0; }
+  to { background-position: 200px 0; }
+}
+
+/* ── GROUND BAR ── */
+.ground-bar {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  height: 48px; z-index: 1;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--grass) 0px, var(--grass) 32px,
+    #007800 32px, #007800 33px
+  );
+  border-top: 4px solid #006400;
+}
+.ground-bar::after {
+  content: '';
+  position: absolute; top: 12px; left: 0; right: 0; bottom: 0;
+  background: var(--ground);
+  border-top: 4px solid #6b2e00;
+}
+
+/* ── HEADER ── */
+.hud {
+  position: relative; z-index: 10;
+  background: rgba(0,0,0,0.75);
+  padding: 10px 16px 8px;
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 8px;
+  border-bottom: 4px solid var(--coin);
+}
+
+.hud-title {
+  font-size: 0.55rem;
+  color: var(--coin);
+  letter-spacing: 1px;
+  text-shadow: 2px 2px 0 #8b6914;
+}
+
+.hud-stats {
+  display: flex; gap: 16px; align-items: center;
+}
+
+.stat {
+  font-size: 0.45rem;
+  color: white;
+  text-align: center;
+  line-height: 1.8;
+}
+
+.stat-val {
+  font-size: 0.6rem;
+  color: var(--coin);
+  display: block;
+}
+
+.lives {
+  font-size: 0.7rem;
+  color: var(--mario-red);
+}
+
+/* ── MAIN WRAP ── */
+.wrap {
+  position: relative; z-index: 5;
+  max-width: 740px; margin: 0 auto;
+  padding: 16px 12px 80px;
+}
+
+/* ── STAGE INDICATOR ── */
+.stage-bar {
+  display: flex; gap: 6px; margin-bottom: 16px; justify-content: center;
+}
+
+.stage-pip {
+  width: 28px; height: 28px;
+  border: 3px solid rgba(255,255,255,0.4);
+  border-radius: 4px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.5rem;
+  color: rgba(255,255,255,0.5);
+  background: rgba(0,0,0,0.3);
+  transition: all 0.3s;
+}
+
+.stage-pip.done { background: var(--green); border-color: var(--green); color: white; }
+.stage-pip.active { background: var(--coin); border-color: var(--coin); color: var(--dark); animation: blink 0.8s step-end infinite; }
+
+@keyframes blink { 50% { opacity: 0.6; } }
+
+/* ── CARD ── */
+.card {
+  background: rgba(0,0,0,0.82);
+  border: 4px solid var(--coin);
+  border-radius: 4px;
+  padding: 16px;
+  margin-bottom: 14px;
+  box-shadow: 4px 4px 0 rgba(0,0,0,0.5), inset 0 0 0 2px rgba(255,255,255,0.05);
+  position: relative;
+  overflow: hidden;
+}
+
+.card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+}
+
+.card-title {
+  font-size: 0.5rem;
+  color: var(--coin);
+  margin-bottom: 12px;
+  letter-spacing: 1px;
+  display: flex; align-items: center; gap: 8px;
+}
+
+.card-title .icon { font-size: 1rem; }
+
+/* ── TUTORIAL BOX ── */
+.tutorial {
+  background: rgba(255,255,255,0.08);
+  border-left: 4px solid var(--sky);
+  border-radius: 0 4px 4px 0;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  font-family: 'VT323', monospace;
+  font-size: 1.05rem;
+  color: #d0e8ff;
+  line-height: 1.5;
+}
+
+.tutorial .note {
+  font-size: 0.95rem;
+  color: rgba(255,255,255,0.5);
+  margin-top: 4px;
+}
+
+/* ── SLIDER ── */
+.slider-wrap { margin-bottom: 14px; }
+
+.slider-label {
+  font-size: 0.42rem;
+  color: #aaa;
+  margin-bottom: 6px;
+  display: flex; justify-content: space-between;
+}
+
+.slider-val {
+  color: var(--coin);
+  font-size: 0.55rem;
+}
+
+input[type=range] {
+  width: 100%;
+  appearance: none;
+  height: 8px;
+  background: #333;
+  border-radius: 0;
+  outline: none;
+  border: 2px solid #555;
+}
+
+input[type=range]::-webkit-slider-thumb {
+  appearance: none;
+  width: 20px; height: 20px;
+  background: var(--coin);
+  border: 3px solid #8b6914;
+  border-radius: 0;
+  cursor: pointer;
+  box-shadow: 2px 2px 0 #000;
+}
+
+/* ── NUMBER INPUTS ── */
+.inputs-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+  margin-bottom: 12px;
+}
+
+.input-box {
+  display: flex; flex-direction: column; gap: 5px;
+}
+
+.input-box label {
+  font-size: 0.38rem;
+  color: #aaa;
+}
+
+.input-box input {
+  padding: 7px 8px;
+  background: #1a1a2e;
+  border: 3px solid #555;
+  color: var(--coin);
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.5rem;
+  border-radius: 0;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.input-box input:focus { border-color: var(--coin); }
+
+/* ── CANVAS ── */
+.canvas-wrap {
+  position: relative;
+  border: 4px solid #555;
+  background: #0d1117;
+  margin-bottom: 10px;
+  overflow: hidden;
+}
+
+canvas {
+  display: block;
+  width: 100%;
+  cursor: crosshair;
+}
+
+.canvas-hint {
+  position: absolute; bottom: 6px; right: 8px;
+  font-size: 0.35rem;
+  color: rgba(255,255,255,0.3);
+  font-family: 'VT323', monospace;
+}
+
+/* ── BUTTONS ── */
+.btn {
+  display: block; width: 100%;
+  padding: 12px 16px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.45rem;
+  letter-spacing: 1px;
+  border: none; border-radius: 0;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: transform 0.1s, box-shadow 0.1s;
+  box-shadow: 4px 4px 0 #000;
+  margin-top: 8px;
+}
+
+.btn:active { transform: translate(2px,2px); box-shadow: 2px 2px 0 #000; }
+
+.btn-go { background: var(--green); color: white; border: 3px solid #005000; }
+.btn-go:hover { background: #00c000; }
+.btn-red { background: var(--mario-red); color: white; border: 3px solid #900; }
+.btn-red:hover { background: #ff3333; }
+.btn-coin { background: var(--coin); color: var(--dark); border: 3px solid #8b6914; }
+.btn-coin:hover { background: #ffe040; }
+.btn-ghost { background: transparent; color: #aaa; border: 3px solid #444; }
+.btn-ghost:hover { color: white; border-color: white; }
+
+/* ── RESULT BOXES ── */
+.result-box {
+  padding: 12px 14px;
+  border-radius: 0;
+  font-family: 'VT323', monospace;
+  font-size: 1rem;
+  line-height: 1.6;
+  margin-top: 10px;
+  border: 3px solid;
+  display: none;
+}
+
+.result-box.show { display: block; }
+.result-green { background: rgba(0,168,0,0.2); border-color: var(--green); color: #90ff90; }
+.result-red { background: rgba(229,37,33,0.2); border-color: var(--mario-red); color: #ff9090; }
+.result-gold { background: rgba(251,208,0,0.2); border-color: var(--coin); color: var(--coin); }
+
+/* ── PIXEL COIN ── */
+.coin-pop {
+  position: fixed;
+  font-size: 1.5rem;
+  pointer-events: none;
+  z-index: 999;
+  animation: coinRise 0.8s ease-out forwards;
+}
+
+@keyframes coinRise {
+  0% { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-80px) scale(1.5); }
+}
+
+/* ── STAR BURST ── */
+.star-burst {
+  position: fixed; top: 50%; left: 50%;
+  transform: translate(-50%,-50%);
+  font-size: 4rem;
+  pointer-events: none;
+  z-index: 999;
+  animation: starPop 0.6s ease-out forwards;
+}
+
+@keyframes starPop {
+  0% { opacity: 1; transform: translate(-50%,-50%) scale(0); }
+  50% { opacity: 1; transform: translate(-50%,-50%) scale(1.3); }
+  100% { opacity: 0; transform: translate(-50%,-50%) scale(1); }
+}
+
+/* ── POINT BADGE ── */
+.pt-badge {
+  display: inline-block;
+  background: rgba(255,255,255,0.1);
+  border: 2px solid #555;
+  padding: 4px 8px;
+  font-size: 0.4rem;
+  color: #aaa;
+  margin: 3px 3px 0 0;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.pt-badge:hover { border-color: var(--mario-red); color: var(--mario-red); }
+.pt-badge.active-pt { border-color: var(--coin); color: var(--coin); }
+
+/* ── SLOPE DISPLAY ── */
+.slope-display {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 12px;
+  background: rgba(255,255,255,0.05);
+  border: 2px solid #333;
+  margin-top: 8px;
+}
+
+.slope-arrow {
+  font-size: 1.8rem;
+  transition: transform 0.5s, color 0.5s;
+}
+
+.slope-info {
+  font-family: 'VT323', monospace;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.slope-pos { color: var(--green); }
+.slope-neg { color: var(--mario-red); }
+
+/* ── PROGRESS ── */
+.prog-wrap {
+  height: 12px;
+  background: #222;
+  border: 2px solid #444;
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+
+.prog-fill {
+  height: 100%;
+  background: repeating-linear-gradient(
+    90deg, var(--green) 0px, var(--green) 12px, #006400 12px, #006400 14px
+  );
+  transition: width 0.4s;
+  width: 0%;
+}
+
+/* ── THEORY BOX ── */
+.theory {
+  background: rgba(92,148,252,0.1);
+  border: 3px solid rgba(92,148,252,0.5);
+  padding: 12px 14px;
+  margin-top: 10px;
+  font-family: 'VT323', monospace;
+  font-size: 1rem;
+  color: #a0c8ff;
+  line-height: 1.6;
+  display: none;
+}
+
+.theory.show { display: block; }
+.theory .th-title { color: var(--coin); font-size: 0.5rem; margin-bottom: 8px; font-family: 'Press Start 2P', monospace; }
+
+/* ── TABS ── */
+.tabs { display: flex; gap: 0; margin-bottom: -4px; }
+.tab-btn {
+  padding: 8px 12px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.38rem;
+  background: #222; color: #666;
+  border: 3px solid #444; border-bottom: none;
+  cursor: pointer;
+}
+.tab-btn.active { background: rgba(0,0,0,0.82); color: var(--coin); border-color: var(--coin); }
+
+/* ── FINAL SCREEN ── */
+.final-screen {
+  text-align: center;
+  padding: 30px 20px;
+  display: none;
+}
+.final-screen.show { display: block; }
+
+.final-title {
+  font-size: 0.8rem;
+  color: var(--coin);
+  text-shadow: 3px 3px 0 #8b6914;
+  margin-bottom: 16px;
+  animation: pulse 1s ease-in-out infinite;
+}
+
+@keyframes pulse { 50% { transform: scale(1.05); } }
+
+.score-big {
+  font-size: 2rem;
+  color: var(--coin);
+  text-shadow: 4px 4px 0 #8b6914;
+  margin: 12px 0;
+}
+
+/* ── RESPONSIVE ── */
+@media(max-width: 400px) {
+  .hud-title { font-size: 0.42rem; }
+  .card-title { font-size: 0.42rem; }
+  .tutorial { font-size: 0.88rem; }
+}
+</style>
+</head>
+<body>
+
+<div class="pixel-bg"></div>
+<div class="ground-bar"></div>
+
+<!-- HUD -->
+<div class="hud">
+  <div class="hud-title">🍄 SLOPE FLIP QUEST</div>
+  <div class="hud-stats">
+    <div class="stat">COINS<span class="stat-val" id="coins">× 0</span></div>
+    <div class="stat">SCORE<span class="stat-val" id="score">000000</span></div>
+    <div class="stat">STAGE<span class="stat-val" id="stageNum">1-1</span></div>
+    <div class="lives">❤️❤️❤️</div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <!-- Stage bar -->
+  <div class="stage-bar">
+    <div class="stage-pip active" id="sp0">1</div>
+    <div class="stage-pip" id="sp1">2</div>
+    <div class="stage-pip" id="sp2">3</div>
+    <div class="stage-pip" id="sp3">4</div>
+    <div class="stage-pip" id="sp4">🏆</div>
+  </div>
+
+  <div class="prog-wrap"><div class="prog-fill" id="progFill"></div></div>
+
+  <!-- ═══ STAGE 1: Choose Slope ═══ -->
+  <div class="card" id="stage1">
+    <div class="card-title"><span class="icon">🗺️</span> STAGE 1-1 · CHOOSE YOUR SLOPE</div>
+
+    <div class="tutorial">
+      📺 Your mission: Build a regression line with a POSITIVE slope.<br>
+      Then we'll try to flip it with one evil point! 😈
+      
+    </div>
+
+    <div class="slider-wrap">
+      <div class="slider-label">
+        <span>B1 (slope) — must be positive!</span>
+        <span class="slider-val" id="b1disp">2.0</span>
+      </div>
+      <input type="range" min="0.5" max="5" step="0.1" value="2" id="b1slider"
+        oninput="b1=+this.value; document.getElementById('b1disp').textContent=b1.toFixed(1);">
+    </div>
+
+    <div class="slider-wrap">
+      <div class="slider-label">
+        <span>B0 (intercept)</span>
+        <span class="slider-val" id="b0disp">5.0</span>
+      </div>
+      <input type="range" min="-10" max="20" step="0.5" value="5" id="b0slider"
+        oninput="b0=+this.value; document.getElementById('b0disp').textContent=b0.toFixed(1);">
+    </div>
+
+    <div class="theory show">
+      <div class="th-title">📖 WHAT IS B1?</div>
+      B1 = slope = how much Y changes when X increases by 1.<br>
+      B1 > 0 → line goes UP 📈 · B1 < 0 → line goes DOWN 📉<br>
+      <span style="opacity:0.7">Positive slope → line goes UP and to the right 📈</span>
+    </div>
+
+    <button class="btn btn-go" onclick="goStage2()">▶ NEXT: PLACE YOUR POINTS →</button>
+  </div>
+
+  <!-- ═══ STAGE 2: Place 4 Points ═══ -->
+  <div class="card" id="stage2" style="display:none">
+    <div class="card-title"><span class="icon">🎯</span> STAGE 1-2 · PLACE 4 POINTS</div>
+
+    <div class="tutorial">
+      Click on the graph OR type X values below to place your 4 points!<br>
+      Each point follows: Y = <span id="formula1" style="color:var(--coin)">5 + 2·X</span> + noise 🎲
+      
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('click')" id="tClick">🖱️ CLICK</button>
+      <button class="tab-btn" onclick="switchTab('type')" id="tType">⌨️ TYPE</button>
+    </div>
+
+    <div class="canvas-wrap" id="clickArea">
+      <canvas id="c1" height="280"></canvas>
+      <div class="canvas-hint">CLICK TO ADD POINTS (max 4)</div>
+    </div>
+
+    <div id="typeArea" style="display:none">
+      <div class="inputs-grid">
+        <div class="input-box"><label>X₁</label><input type="number" id="tx1" value="1" step="1" oninput="updateTypePoints()"></div>
+        <div class="input-box"><label>X₂</label><input type="number" id="tx2" value="2" step="1" oninput="updateTypePoints()"></div>
+        <div class="input-box"><label>X₃</label><input type="number" id="tx3" value="3" step="1" oninput="updateTypePoints()"></div>
+        <div class="input-box"><label>X₄</label><input type="number" id="tx4" value="4" step="1" oninput="updateTypePoints()"></div>
+      </div>
+    </div>
+
+    <div id="ptBadges" style="margin-bottom:8px;min-height:24px;"></div>
+
+    <div class="slope-display" id="slopeDisplay1" style="display:none">
+      <div class="slope-arrow" id="arrow1">📈</div>
+      <div class="slope-info">
+        Current slope: <span id="curSlope1" class="slope-pos">—</span><br>
+        <span style="font-size:0.8rem;color:#888;">Intercept: <span id="curInt1">—</span></span>
+      </div>
+    </div>
+
+    <div class="result-box result-gold" id="res4pts" style="display:none">
+      ✅ 4 POINTS PLACED! Slope = <span id="slope4">?</span><br>
+      <span style="font-size:0.85rem">Great! Your line goes UP 📈 — positive slope confirmed!</span>
+    </div>
+
+    <button class="btn btn-go" id="btnStage3" onclick="goStage3()" style="display:none">▶ NEXT: FIND THE FLIP POINT! →</button>
+    <button class="btn btn-ghost" onclick="clearPoints()">↺ CLEAR POINTS</button>
+  </div>
+
+  <!-- ═══ STAGE 3: Guess the Flip Point ═══ -->
+  <div class="card" id="stage3" style="display:none">
+    <div class="card-title"><span class="icon">😈</span> STAGE 1-3 · FIND THE EVIL FLIP POINT!</div>
+
+    <div class="tutorial">
+      Where should the 5th point go to FLIP the slope to negative?<br>
+      Try to GUESS first — click on the graph! Then reveal the answer.
+      
+    </div>
+
+    <div class="canvas-wrap">
+      <canvas id="c2" height="280"></canvas>
+      <div class="canvas-hint">CLICK TO GUESS THE FLIP POINT!</div>
+    </div>
+
+    <div id="guessResult" class="result-box" style="display:none"></div>
+
+    <div class="theory" id="theory3">
+      <div class="th-title">🤔 HINT · 提示</div>
+      To flip a positive slope, you need a point that is...<br>
+      • Far to the RIGHT on X-axis (extreme X value)<br>
+      • Very LOW on Y-axis (much lower than expected)<br>
+      OLS squares errors → extreme points have HUGE power! 💥<br>
+      <span style="opacity:0.6">Extreme outliers pull the entire regression line toward them!</span>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-top:8px;">
+      <button class="btn btn-red" onclick="showHint()" style="flex:1">💡 SHOW HINT</button>
+      <button class="btn btn-coin" onclick="revealFlip()" style="flex:1">⚡ REVEAL ANSWER!</button>
+    </div>
+  </div>
+
+  <!-- ═══ STAGE 4: Results ═══ -->
+  <div class="card" id="stage4" style="display:none">
+    <div class="card-title"><span class="icon">🏁</span> STAGE 1-4 · FLIP COMPLETE!</div>
+
+    <div class="tutorial">
+      ONE point changed everything! Compare the two scatterplots below.<br>
+      LEFT = 4 points with original line. RIGHT = 5 points with flipped line.
+    </div>
+
+    <!-- TWO SIDE-BY-SIDE PLOTS -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+      <div>
+        <div style="font-family:'Press Start 2P',monospace;font-size:0.35rem;color:#00e040;margin-bottom:4px;text-align:center;">FIGURE 1 — 4 Points</div>
+        <div class="canvas-wrap" style="margin-bottom:0">
+          <canvas id="c3a" height="200"></canvas>
+        </div>
+        <div style="font-family:VT323;font-size:0.95rem;color:#00e040;text-align:center;margin-top:4px;">
+          Slope: <span id="slopeBefore">—</span> 📈
+        </div>
+      </div>
+      <div>
+        <div style="font-family:'Press Start 2P',monospace;font-size:0.35rem;color:#e52521;margin-bottom:4px;text-align:center;">FIGURE 2 — 5 Points</div>
+        <div class="canvas-wrap" style="margin-bottom:0">
+          <canvas id="c3b" height="200"></canvas>
+        </div>
+        <div style="font-family:VT323;font-size:0.95rem;color:#e52521;text-align:center;margin-top:4px;">
+          Slope: <span id="slopeAfter">—</span> 📉
+        </div>
+      </div>
+    </div>
+
+    <div class="result-box result-red show" id="flipBox">
+      😈 THE FLIP POINT: (<span id="fp5x">?</span>, <span id="fp5y">?</span>)<br>
+      Placed far right + very low → its huge squared residual drags the entire line DOWN!
+    </div>
+
+    <div class="theory show">
+      <div class="th-title">🎓 WHAT DID WE LEARN?</div>
+      OLS minimizes SQUARED residuals. One extreme outlier = huge squared error = massive pull on the line.<br><br>
+      Does a flip point ALWAYS exist? YES — for any positive slope, you can always place a point far enough on X with a low enough Y to reverse it. The further right you go, the less Y needs to drop!<br><br>
+      <span style="opacity:0.6">For any set of points with a positive slope, a 5th flip point always exists.</span>
+    </div>
+
+    <button class="btn btn-coin" onclick="goFinal()">🏆 CLAIM YOUR REWARD!</button>
+  </div>
+
+  <!-- ═══ FINAL ═══ -->
+  <div class="card final-screen" id="stageFinal">
+    <div class="final-title">🎉 QUEST COMPLETE! 🎉</div>
+    <div style="font-size:2rem;margin:10px 0">🍄⭐🍄</div>
+    <div class="score-big" id="finalScore">0</div>
+    <div style="font-family:VT323;font-size:1.1rem;color:#aaa;margin-bottom:20px">FINAL SCORE</div>
+
+    <div class="theory show">
+      <div class="th-title">🎓 WHAT YOU DISCOVERED TODAY</div>
+      <span style="color:var(--coin)">① OLS squares residuals.</span><br>
+      This means extreme points are punished much more than regular ones. One outlier far from the data can have more influence than all the other points combined.<br><br>
+      <span style="color:var(--coin)">② Leverage = distance from center.</span><br>
+      The further a point is from the mean of X, the more "leverage" it has over the slope. High leverage points are dangerous — they can pull the line in any direction.<br><br>
+      <span style="color:var(--coin)">③ This is why we check for outliers.</span><br>
+      In real data analysis, always visualize your data first. A single unusual observation can completely change your conclusions!
+    </div>
+
+    <div class="theory show" style="margin-top:10px;border-color:rgba(229,37,33,0.5)">
+      <div class="th-title" style="color:var(--mario-red)">⚠️ REAL WORLD WARNING</div>
+      Imagine a medical study finding that a drug HELPS patients.<br>
+      One extreme outlier patient could flip the result to suggest the drug HARMS people.<br>
+      This is why outlier detection matters in real research!
+    </div>
+
+    <button class="btn btn-go" style="margin-top:12px" onclick="resetGame()">↺ PLAY AGAIN</button>
+  </div>
+
+</div>
+
+<script>
+// ── STATE ──
+let b1=2, b0=5;
+let pts4=[], guessPoint=null;
+let flipPoint=null;
+let coinCount=0, scoreVal=0;
+let activeTab='click';
+let stage=1;
+
+// ── OLS ──
+function ols(pts){
+  if(pts.length<2) return {slope:null,intercept:null};
+  const n=pts.length;
+  let sx=0,sy=0,sxy=0,sxx=0;
+  for(const p of pts){sx+=p.x;sy+=p.y;sxy+=p.x*p.y;sxx+=p.x*p.x;}
+  const denom=n*sxx-sx*sx;
+  if(Math.abs(denom)<1e-10) return {slope:0,intercept:sy/n};
+  const slope=(n*sxy-sx*sy)/denom;
+  const intercept=(sy-slope*sx)/n;
+  return{slope,intercept};
+}
+
+// ── COINS & SCORE ──
+function addCoins(n, x, y){
+  coinCount+=n; scoreVal+=n*100;
+  document.getElementById('coins').textContent='× '+coinCount;
+  document.getElementById('score').textContent=String(scoreVal).padStart(6,'0');
+  for(let i=0;i<n;i++){
+    const el=document.createElement('div');
+    el.className='coin-pop';
+    el.textContent='🪙';
+    el.style.left=(x||300)+'px';
+    el.style.top=(y||300)+'px';
+    document.body.appendChild(el);
+    setTimeout(()=>el.remove(),900);
+  }
+}
+
+function starBurst(){
+  const el=document.createElement('div');
+  el.className='star-burst';
+  el.textContent='⭐';
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(),700);
+}
+
+function advanceStage(n){
+  document.getElementById('sp'+(n-1)).className='stage-pip done';
+  if(n<5) document.getElementById('sp'+n).className='stage-pip active';
+  document.getElementById('stageNum').textContent='1-'+n;
+  document.getElementById('progFill').style.width=(n/5*100)+'%';
+}
+
+// ── DRAW ──
+function drawCanvas(id, points, regLine, flipPt, guessArr, showFlipRegion){
+  const canvas=document.getElementById(id);
+  if(!canvas) return;
+  const ctx=canvas.getContext('2d');
+  const W=canvas.offsetWidth||700;
+  canvas.width=W; canvas.height=canvas.height||280;
+  const H=canvas.height;
+  ctx.clearRect(0,0,W,H);
+
+  const pad={l:50,r:20,t:20,b:35};
+  const pw=W-pad.l-pad.r, ph=H-pad.t-pad.b;
+
+  // data range
+  const allPts=[...points];
+  if(flipPt) allPts.push(flipPt);
+  if(guessArr) allPts.push(...guessArr);
+
+  let xmin=-1,xmax=10,ymin=-5,ymax=30;
+  if(allPts.length){
+    xmin=Math.min(...allPts.map(p=>p.x))-3;
+    xmax=Math.max(...allPts.map(p=>p.x))+3;
+    ymin=Math.min(...allPts.map(p=>p.y))-5;
+    ymax=Math.max(...allPts.map(p=>p.y))+5;
+  }
+  if(xmax-xmin<6){xmin-=3;xmax+=3;}
+  if(ymax-ymin<6){ymin-=3;ymax+=3;}
+
+  const tx=x=>pad.l+(x-xmin)/(xmax-xmin)*pw;
+  const ty=y=>pad.t+(1-(y-ymin)/(ymax-ymin))*ph;
+  const fx=px=>(px-pad.l)/(pw)*(xmax-xmin)+xmin;
+  const fy=py=>ymax-(py-pad.t)/(ph)*(ymax-ymin);
+
+  // grid
+  ctx.strokeStyle='#1e2a1e'; ctx.lineWidth=1;
+  for(let i=0;i<=5;i++){
+    const x=pad.l+i/5*pw;
+    ctx.beginPath();ctx.moveTo(x,pad.t);ctx.lineTo(x,pad.t+ph);ctx.stroke();
+    const y=pad.t+i/5*ph;
+    ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(pad.l+pw,y);ctx.stroke();
+  }
+
+  // axes
+  ctx.strokeStyle='#444'; ctx.lineWidth=2;
+  ctx.beginPath();ctx.moveTo(pad.l,pad.t);ctx.lineTo(pad.l,pad.t+ph);ctx.lineTo(pad.l+pw,pad.t+ph);ctx.stroke();
+
+  // axis labels
+  ctx.fillStyle='#666'; ctx.font='11px VT323';
+  for(let i=0;i<=5;i++){
+    const xv=xmin+(xmax-xmin)*i/5;
+    ctx.fillText(xv.toFixed(0),pad.l+i/5*pw-8,pad.t+ph+18);
+    const yv=ymin+(ymax-ymin)*i/5;
+    ctx.fillText(yv.toFixed(0),2,pad.t+ph-i/5*ph+4);
+  }
+  ctx.fillStyle='#888';
+  ctx.fillText('x',pad.l+pw+4,pad.t+ph+4);
+  ctx.fillText('y',pad.l-20,pad.t);
+
+  // regression lines
+  if(regLine){
+    const y0r=regLine.slope*xmin+regLine.intercept;
+    const y1r=regLine.slope*xmax+regLine.intercept;
+    ctx.strokeStyle=regLine.color||'#00e040';
+    ctx.lineWidth=regLine.width||2.5;
+    if(regLine.dash) ctx.setLineDash([6,4]); else ctx.setLineDash([]);
+    ctx.beginPath();ctx.moveTo(tx(xmin),ty(y0r));ctx.lineTo(tx(xmax),ty(y1r));ctx.stroke();
+    ctx.setLineDash([]);
+
+    // label
+    if(regLine.label){
+      ctx.fillStyle=regLine.color||'#00e040';
+      ctx.font='bold 11px VT323';
+      ctx.fillText(regLine.label, pad.l+pw-80, ty(regLine.slope*xmax+regLine.intercept)-8);
+    }
+  }
+
+  // points
+  points.forEach((p,i)=>{
+    ctx.beginPath();ctx.arc(tx(p.x),ty(p.y),7,0,Math.PI*2);
+    ctx.fillStyle='#5c94fc';
+    ctx.fill();
+    ctx.strokeStyle='white'; ctx.lineWidth=2; ctx.stroke();
+    ctx.fillStyle='white'; ctx.font='bold 10px VT323';
+    ctx.fillText(`P${i+1}`,tx(p.x)+9,ty(p.y)-5);
+  });
+
+  // flip point
+  if(flipPt){
+    ctx.beginPath();ctx.arc(tx(flipPt.x),ty(flipPt.y),9,0,Math.PI*2);
+    ctx.fillStyle='#e52521';
+    ctx.fill();
+    ctx.strokeStyle='#fbd000'; ctx.lineWidth=3; ctx.stroke();
+    ctx.fillStyle='#fbd000'; ctx.font='bold 11px VT323';
+    ctx.fillText('😈',tx(flipPt.x)-8,ty(flipPt.y)-12);
+    ctx.fillText(`(${flipPt.x.toFixed(1)},${flipPt.y.toFixed(1)})`,tx(flipPt.x)+10,ty(flipPt.y)-5);
+  }
+
+  // guess point
+  if(guessArr) guessArr.forEach(g=>{
+    ctx.beginPath();ctx.arc(tx(g.x),ty(g.y),7,0,Math.PI*2);
+    ctx.fillStyle='#fbd000'; ctx.fill();
+    ctx.strokeStyle='white'; ctx.lineWidth=2; ctx.stroke();
+    ctx.fillStyle='white'; ctx.font='bold 10px VT323';
+    ctx.fillText('?',tx(g.x)-3,ty(g.y)+4);
+  });
+
+  return {tx,ty,fx,fy,xmin,xmax,ymin,ymax};
+}
+
+// ── STAGE 1 → 2 ──
+function goStage2(){
+  b1=+document.getElementById('b1slider').value;
+  b0=+document.getElementById('b0slider').value;
+  document.getElementById('formula1').textContent=`${b0} + ${b1}·X`;
+  document.getElementById('stage1').style.display='none';
+  document.getElementById('stage2').style.display='block';
+  advanceStage(2);
+  addCoins(3);
+  setTimeout(()=>{ drawCanvas('c1',[],null,null,null,false); },50);
+
+  // canvas click
+  const canvas=document.getElementById('c1');
+  canvas.addEventListener('click', function(e){
+    if(activeTab!=='click') return;
+    if(pts4.length>=4) return;
+    const rect=canvas.getBoundingClientRect();
+    const px=e.clientX-rect.left;
+    const py=e.clientY-rect.top;
+    const info=drawCanvas('c1',pts4,null,null,null,false);
+    if(!info) return;
+    const x=info.fx(px*(canvas.width/rect.width));
+    const y=info.fy(py*(canvas.height/rect.height));
+    addPoint(Math.round(x*10)/10, Math.round(y*10)/10);
+  });
+}
+
+function addPoint(x,y){
+  if(pts4.length>=4) return;
+  pts4.push({x,y});
+  updateBadges();
+  updatePlot1();
+  addCoins(1);
+}
+
+function clearPoints(){
+  pts4=[];
+  updateBadges();
+  document.getElementById('slopeDisplay1').style.display='none';
+  document.getElementById('res4pts').style.display='none';
+  document.getElementById('btnStage3').style.display='none';
+  drawCanvas('c1',[],null,null,null,false);
+}
+
+function removePoint(i){
+  pts4.splice(i,1);
+  updateBadges();
+  updatePlot1();
+}
+
+function updateBadges(){
+  const wrap=document.getElementById('ptBadges');
+  wrap.innerHTML=pts4.map((p,i)=>
+    `<span class="pt-badge active-pt" onclick="removePoint(${i})">P${i+1}(${p.x.toFixed(1)},${p.y.toFixed(1)}) ✕</span>`
+  ).join('');
+  if(pts4.length===0) wrap.innerHTML='<span style="font-family:VT323;font-size:0.85rem;color:#555">No points yet — click the graph or type X values!</span>';
+}
+
+function updatePlot1(){
+  if(pts4.length<2){
+    drawCanvas('c1',pts4,null,null,null,false);
+    document.getElementById('slopeDisplay1').style.display='none';
+    document.getElementById('res4pts').style.display='none';
+    document.getElementById('btnStage3').style.display='none';
+    return;
+  }
+  const reg=ols(pts4);
+  drawCanvas('c1',pts4,{slope:reg.slope,intercept:reg.intercept,color:'#00e040',label:`slope=${reg.slope.toFixed(2)}`},null,null,false);
+
+  const sd=document.getElementById('slopeDisplay1');
+  sd.style.display='flex';
+  const sp=document.getElementById('curSlope1');
+  sp.textContent=reg.slope.toFixed(3);
+  sp.className=reg.slope>0?'slope-pos':'slope-neg';
+  document.getElementById('arrow1').textContent=reg.slope>0?'📈':'📉';
+  document.getElementById('curInt1').textContent=reg.intercept.toFixed(3);
+
+  if(pts4.length===4){
+    document.getElementById('res4pts').style.display='block';
+    document.getElementById('slope4').textContent=reg.slope.toFixed(3);
+    document.getElementById('res4pts').className='result-box show '+(reg.slope>0?'result-green':'result-red');
+    document.getElementById('btnStage3').style.display='block';
+    starBurst();
+    addCoins(5);
+  }
+}
+
+function switchTab(t){
+  activeTab=t;
+  document.getElementById('tClick').className='tab-btn'+(t==='click'?' active':'');
+  document.getElementById('tType').className='tab-btn'+(t==='type'?' active':'');
+  document.getElementById('clickArea').style.display=t==='click'?'block':'none';
+  document.getElementById('typeArea').style.display=t==='type'?'block':'none';
+  if(t==='type') updateTypePoints();
+}
+
+function updateTypePoints(){
+  const xs=[+document.getElementById('tx1').value,
+             +document.getElementById('tx2').value,
+             +document.getElementById('tx3').value,
+             +document.getElementById('tx4').value];
+  pts4=xs.map(x=>({x, y:+(b0+b1*x+(Math.random()*2-1)*0.5).toFixed(2)}));
+  updateBadges();
+  updatePlot1();
+}
+
+// ── STAGE 3 ──
+function goStage3(){
+  if(pts4.length<4){alert('Place 4 points first!');return;}
+  const reg=ols(pts4);
+  if(reg.slope<=0){alert('Your slope must be positive! Clear and try again.');return;}
+  document.getElementById('stage2').style.display='none';
+  document.getElementById('stage3').style.display='block';
+  advanceStage(3);
+  addCoins(5);
+
+  // draw with 4 pts
+  setTimeout(()=>{
+    drawCanvas('c2',pts4,{slope:reg.slope,intercept:reg.intercept,color:'#00e040',label:'original'},null,null,false);
+  },50);
+
+  const canvas=document.getElementById('c2');
+  canvas.addEventListener('click',function(e){
+    const rect=canvas.getBoundingClientRect();
+    const px=e.clientX-rect.left;
+    const py=e.clientY-rect.top;
+    const info=drawCanvas('c2',pts4,{slope:ols(pts4).slope,intercept:ols(pts4).intercept,color:'#00e040'},null,null,false);
+    if(!info) return;
+    const x=info.fx(px*(canvas.width/rect.width));
+    const y=info.fy(py*(canvas.height/rect.height));
+    guessPoint={x:Math.round(x*10)/10,y:Math.round(y*10)/10};
+    const allPts=[...pts4,guessPoint];
+    const newReg=ols(allPts);
+    drawCanvas('c2',pts4,{slope:ols(pts4).slope,intercept:ols(pts4).intercept,color:'#00e040',dash:true},null,[guessPoint],false);
+
+    const fb=document.getElementById('guessResult');
+    if(newReg.slope<0){
+      fb.className='result-box show result-green';
+      fb.innerHTML='🎉 YOU FLIPPED IT! Slope = '+newReg.slope.toFixed(3)+' · Amazing guess! +50 points!';
+      addCoins(5);
+    } else {
+      fb.className='result-box show result-red';
+      fb.innerHTML='❌ Not quite... slope = '+newReg.slope.toFixed(3)+' · Still positive! Try further right with a lower Y value.';
+    }
+    fb.style.display='block';
+  });
+}
+
+function showHint(){
+  document.getElementById('theory3').style.display='block';
+}
+
+function revealFlip(){
+  const reg4=ols(pts4);
+  const xmax=Math.max(...pts4.map(p=>p.x));
+  const ymin=Math.min(...pts4.map(p=>p.y));
+
+  let x5=xmax+12, y5=ymin-25;
+  let tries=0;
+  while(tries<300){
+    const all=[...pts4,{x:x5,y:y5}];
+    const r=ols(all);
+    if(r.slope<-0.5) break;
+    y5-=3; tries++;
+  }
+  flipPoint={x:Math.round(x5*10)/10,y:Math.round(y5*10)/10};
+
+  document.getElementById('stage3').style.display='none';
+  document.getElementById('stage4').style.display='block';
+  advanceStage(4);
+  addCoins(10);
+  starBurst();
+
+  const reg5=ols([...pts4,flipPoint]);
+  document.getElementById('slopeBefore').textContent='slope = '+reg4.slope.toFixed(3)+' 📈';
+  document.getElementById('slopeAfter').textContent='slope = '+reg5.slope.toFixed(3)+' 📉';
+  document.getElementById('fp5x').textContent=flipPoint.x.toFixed(1);
+  document.getElementById('fp5y').textContent=flipPoint.y.toFixed(1);
+
+  setTimeout(()=>{
+    // FIGURE 1: 4 points + green original line (no flip point)
+    drawCanvas('c3a', pts4,
+      {slope:reg4.slope, intercept:reg4.intercept, color:'#00e040', label:'slope='+reg4.slope.toFixed(2)},
+      null, null, false);
+
+    // FIGURE 2: 5 points (including flip point) + red flipped line
+    const allPts=[...pts4, flipPoint];
+    drawCanvas('c3b', allPts,
+      {slope:reg5.slope, intercept:reg5.intercept, color:'#e52521', label:'slope='+reg5.slope.toFixed(2)},
+      flipPoint, null, false);
+  },80);
+}
+
+function goFinal(){
+  document.getElementById('stage4').style.display='none';
+  document.getElementById('stageFinal').style.display='block';
+  advanceStage(5);
+  document.getElementById('sp4').className='stage-pip done';
+  addCoins(20);
+  starBurst();
+  document.getElementById('finalScore').textContent=scoreVal.toLocaleString();
+}
+
+function resetGame(){
+  b1=2;b0=5;pts4=[];guessPoint=null;flipPoint=null;
+  coinCount=0;scoreVal=0;stage=1;
+  document.getElementById('coins').textContent='× 0';
+  document.getElementById('score').textContent='000000';
+  document.getElementById('stageNum').textContent='1-1';
+  document.getElementById('progFill').style.width='0%';
+  for(let i=0;i<5;i++) document.getElementById('sp'+i).className='stage-pip';
+  document.getElementById('sp0').className='stage-pip active';
+  ['stage2','stage3','stage4','stageFinal'].forEach(id=>document.getElementById(id).style.display='none');
+  document.getElementById('stage1').style.display='block';
+  document.getElementById('b1slider').value=2;
+  document.getElementById('b1disp').textContent='2.0';
+  document.getElementById('b0slider').value=5;
+  document.getElementById('b0disp').textContent='5.0';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// init
+updateBadges();
+</script>
+</body>
+</html>
